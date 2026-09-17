@@ -1,6 +1,236 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>Panthawtar</title></head>
-<body style="font-family:sans-serif;padding:20px;background:#0f766e;color:#fff;text-align:center">
-<h1>🌿 ပန်းသော်တာ</h1>
-<p>Test အလုပ်လုပ်ပါပြီ</p>
-</body></html>
+<html lang="my">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>ပန်းသော်တာ ပွဲရုံ</title>
+<style>
+:root{--bg:#f4f7f6;--cd:#fff;--tx:#182321;--mt:#667;--bd:#e0e5e4;--pr:#0f766e;--sf:#e8efee;--ib:#ccd5d3;--dg:#b42318;--wn:#a15c00;--ps:#087443;--ng:#b42318}
+body.dk{--bg:#0d1117;--cd:#161b22;--tx:#e6edf3;--mt:#8b949e;--bd:#30363d;--pr:#2dd4bf;--sf:#21262d;--ib:#30363d;--dg:#f85149;--wn:#d29922;--ps:#3fb950;--ng:#f85149}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:15px}
+header{position:sticky;top:0;z-index:20;background:var(--pr);color:#fff;padding:10px 13px;display:flex;align-items:center;gap:8px}
+header b{font-size:16px}
+#clk{margin-left:auto;font-size:13px}
+.tg{background:rgba(255,255,255,.2);color:#fff;padding:5px 8px;border-radius:8px;border:0;font-size:14px;cursor:pointer}
+.nav{position:sticky;top:44px;z-index:19;background:var(--cd);display:flex;gap:5px;overflow:auto;padding:6px;border-bottom:1px solid var(--bd)}
+.nav button{white-space:nowrap;font-size:12px;padding:6px 9px}
+.wrap{max-width:1100px;margin:auto;padding:10px;padding-bottom:80px}
+.cd{background:var(--cd);border-radius:10px;padding:11px;margin:8px 0;box-shadow:0 1px 4px #0001}
+.gr{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.st{font-size:17px;font-weight:800}
+.mt{color:var(--mt);font-size:12px}
+label{display:block;font-weight:600;margin:6px 0 3px;font-size:13px}
+input,select,textarea{width:100%;padding:9px;border:1px solid var(--ib);border-radius:7px;font-size:15px;background:var(--cd);color:var(--tx)}
+button{border:0;border-radius:7px;padding:8px 11px;background:var(--pr);color:#fff;font-weight:600;cursor:pointer;font-size:13px}
+.sf{background:var(--sf);color:var(--pr)}
+.dg{background:var(--dg)}
+.sm{padding:4px 8px;font-size:11px}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.row>*{flex:1;min-width:110px}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th,.tbl td{padding:6px;border-bottom:1px solid var(--bd);text-align:left;font-size:12px}
+.ep{text-align:center;color:var(--mt);padding:15px}
+.nt{padding:9px;border-radius:8px;background:var(--sf);margin:6px 0;font-size:12px}
+.ps{color:var(--ps)}.ng{color:var(--ng)}
+.th{max-width:70px;max-height:70px;border-radius:6px;display:block;margin:4px 0;cursor:pointer}
+.rc{border-top:1px solid var(--bd);padding:8px 0}
+.itR,.bgR{display:flex;gap:4px;margin-bottom:5px;align-items:center;flex-wrap:wrap;background:var(--sf);padding:6px;border-radius:7px}
+.itR select,.bgR select{flex:2;min-width:80px}
+.itR input,.bgR input{flex:1;min-width:50px}
+.tot{background:var(--sf);padding:9px;border-radius:7px;margin-top:6px;font-size:12px}
+.tot div{display:flex;justify-content:space-between;padding:2px 0}
+.tot .net{font-size:14px;font-weight:800;border-top:1px solid var(--bd);padding-top:5px;margin-top:3px;color:var(--ps)}
+.md{position:fixed;inset:0;background:#000c;z-index:50;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto}
+.md .bx{background:var(--cd);border-radius:11px;max-width:700px;width:100%;max-height:92vh;overflow:auto;padding:14px}
+.cl{float:right;background:#444}
+#ld{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:100;flex-direction:column;gap:10px}
+#ld .sp{width:40px;height:40px;border:4px solid var(--pr);border-top-color:transparent;border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.tag{display:inline-block;padding:2px 6px;border-radius:5px;font-size:10px;font-weight:700;margin-right:3px;background:var(--sf)}
+@media(max-width:600px){.tbl{display:block;overflow:auto;white-space:nowrap}}
+</style>
+</head>
+<body>
+<div id="ld"><div class="sp"></div><div class="mt">ဒေတာ ဖွင့်နေသည်...</div></div>
+<header><b>🌿 ပန်းသော်တာ</b><button class="tg" id="themeBtn" onclick="tglTheme()">🌙</button><span id="clk"></span></header>
+<div class="nav" id="nav"></div>
+<main class="wrap" id="app"></main>
+<div id="modal"></div>
+
+<script>
+/* ===== IndexedDB ===== */
+const DB_NAME='ptt_db', DB_VER=1, STORE='kv', DB_KEY='db';
+let _idb=null;
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE);};r.onsuccess=e=>{_idb=e.target.result;res(_idb);};r.onerror=e=>rej(e);});}
+function idbGet(k){return new Promise((res,rej)=>{if(!_idb)return res(null);const t=_idb.transaction(STORE,'readonly').objectStore(STORE).get(k);t.onsuccess=()=>res(t.result||null);t.onerror=rej;});}
+function idbPut(k,v){return new Promise((res,rej)=>{if(!_idb)return rej('no');const t=_idb.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);t.onsuccess=res;t.onerror=rej;});}
+
+/* ===== Constants ===== */
+const OLD_KEYS=['ptt_v11','ptt_v10','ptt_v9','ptt_v7','panthawtar_wholesale_v6'];
+const THEME='ptt_theme';
+const app=document.getElementById('app'),mod=document.getElementById('modal');
+const N=x=>Number(x)||0;
+const money=x=>N(x).toLocaleString('en-US',{maximumFractionDigits:2})+' ကျပ်';
+const qty=x=>N(x).toLocaleString('en-US',{maximumFractionDigits:2});
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const uid=()=>Date.now()+Math.floor(Math.random()*1000);
+const sum=(a,k)=>(a||[]).reduce((z,x)=>z+N(x[k]),0);
+const BANKS=['KBZ','AYA','CB','Wave','Kpay','UAB','Yoma','AGD','အခြား'];
+setInterval(()=>{const c=document.getElementById('clk');if(c)c.innerText=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});},1000);
+
+/* ===== DB ===== */
+const DEF={items:['ဖာလာ','ဘောဖာလာ','ဂေဂေါဖာလာ'],customers:[],purchases:[],sales:[],deposits:[],precuts:[],loans:[],cars:[],expenses:[]};
+let db={...DEF};
+
+function norm(x,kind){
+  if(!x.items||!Array.isArray(x.items)){x.items=(x.item&&N(x.w))?[{item:x.item,w:N(x.w),price:N(x.price),bags:N(x.bags)}]:[];delete x.item;delete x.w;delete x.price;}
+  x.items=x.items.map(it=>({item:String(it.item||''),w:N(it.w),price:N(it.price),bags:N(it.bags)}));
+  x.note=x.note||'';x.photo=x.photo||'';x.person=String(x.person||'').trim();x.date=x.date||today();
+  if(kind!=='sale'){x.driverName=x.driverName||'';x.carRate=N(x.carRate);if(x.carFee==null)x.carFee=x.carRate*x.items.reduce((s,it)=>s+Math.floor(N(it.w)),0);}
+  x.grossAmount=x.items.reduce((s,it)=>s+N(it.w)*N(it.price),0);
+  x.netAmount=x.grossAmount-(kind==='sale'?0:N(x.carFee));
+  x.total=x.netAmount;
+  if(kind==='purchase'||kind==='sale')x.payments=x.payments||[];
+  if(kind==='precut')x.deliveries=x.deliveries||[];
+  if(kind==='deposit')x.fixes=(x.fixes||[]).map(f=>({id:f.id||uid(),date:f.date||x.date,item:String(f.item||''),w:N(f.w),price:N(f.price),note:f.note||''}));
+  return x;
+}
+function migrate(){
+  db.items=db.items||DEF.items.slice();
+  ['purchases','sales','deposits','precuts','loans','cars','expenses'].forEach(k=>db[k]=db[k]||[]);
+  db.customers=(db.customers||[]).map(c=>typeof c==='string'?{name:c.trim(),phone:'',address:''}:c).filter(c=>c.name);
+  const s=new Set();db.customers=db.customers.filter(c=>{if(s.has(c.name))return false;s.add(c.name);return true;});
+  db.purchases=db.purchases.map(x=>norm(x,'purchase'));
+  db.sales=db.sales.map(x=>norm(x,'sale'));
+  db.precuts=db.precuts.map(x=>norm(x,'precut'));
+  db.deposits=db.deposits.map(x=>norm(x,'deposit'));
+  db.loans.forEach(x=>{x.amount=N(x.amount);x.payments=x.payments||[];x.note=x.note||'';});
+  db.cars=db.cars.map(c=>{
+    if(!c.items||!Array.isArray(c.items)){if(N(c.totalW)>0)c.items=[{item:c.item||db.items[0],bags:1,weightPerBag:N(c.totalW)}];else c.items=[];delete c.totalW;delete c.item;}
+    c.items=c.items.map(it=>({item:String(it.item||''),bags:N(it.bags),weightPerBag:N(it.weightPerBag)}));
+    c.carNo=c.carNo||'';c.driverName=c.driverName||'';c.driverPhone=c.driverPhone||'';
+    c.carRate=N(c.carRate);c.deliverTo=c.deliverTo||'';c.note=c.note||'';c.date=c.date||today();c.person=String(c.person||'').trim();
+    return c;
+  });
+  db.expenses.forEach(x=>{x.amount=N(x.amount);x.note=x.note||'';});
+  const s2=new Set(db.customers.map(c=>c.name));
+  ['purchases','sales','deposits','precuts'].forEach(k=>db[k].forEach(x=>{if(x.person&&!s2.has(x.person)){s2.add(x.person);db.customers.push({name:x.person,phone:'',address:''});}}));
+}
+let _t=null;
+function save(){if(_t)clearTimeout(_t);_t=setTimeout(()=>{idbPut(DB_KEY,db).catch(e=>alert('❌ သိမ်းမရ'));},400);return true;}
+
+/* ===== Helpers ===== */
+function findC(n){n=String(n||'').trim();return db.customers.find(c=>c.name===n);}
+function addC(name,phone=''){name=String(name||'').trim();if(!name)return;const c=findC(name);if(!c){db.customers.push({name,phone,address:''});save();}else if(phone&&!c.phone)c.phone=phone;}
+function cDl(id){return `<datalist id="${id}L">${db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('')}</datalist>`;}
+function cBal(name){
+  const ss=db.sales.filter(s=>s.person===name),ps=db.purchases.filter(p=>p.person===name);
+  const st=ss.reduce((z,s)=>z+N(s.total),0),sp=ss.reduce((z,s)=>z+sum(s.payments,'amount'),0);
+  const pt=ps.reduce((z,p)=>z+N(p.total),0),pp=ps.reduce((z,p)=>z+sum(p.payments,'amount'),0);
+  return {saleTotal:st,salePaid:sp,purchaseTotal:pt,purchasePaid:pp,theyOwe:st-sp,weOwe:pt-pp,net:(st-sp)-(pt-pp)};
+}
+function opts(sel=''){return db.items.map(i=>`<option value="${esc(i)}" ${i===sel?'selected':''}>${esc(i)}</option>`).join('');}
+function avgBuy(item){let w=0,v=0;db.purchases.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item){w+=N(it.w);v+=N(it.w)*N(it.price);}}));db.precuts.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item){w+=N(it.w);v+=N(it.w)*N(it.price);}}));db.deposits.forEach(e=>(e.fixes||[]).forEach(f=>{if(f.item===item){w+=N(f.w);v+=N(f.w)*N(f.price);}}));return w>0?v/w:0;}
+function avgSell(item){let w=0,v=0;db.sales.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item){w+=N(it.w);v+=N(it.w)*N(it.price);}}));return w>0?v/w:0;}
+function itemBought(item){let w=0;db.purchases.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item)w+=N(it.w);}));db.precuts.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item)w+=N(it.w);}));db.deposits.forEach(e=>(e.fixes||[]).forEach(f=>{if(f.item===item)w+=N(f.w);}));return w;}
+function itemSold(item){let w=0;db.sales.forEach(e=>(e.items||[]).forEach(it=>{if(it.item===item)w+=N(it.w);}));return w;}
+function stock(){const o={};db.items.forEach(i=>o[i]=0);db.purchases.forEach(e=>(e.items||[]).forEach(it=>o[it.item]=(o[it.item]||0)+N(it.w)));db.precuts.forEach(e=>(e.items||[]).forEach(it=>o[it.item]=(o[it.item]||0)+N(it.w)));db.deposits.forEach(e=>(e.fixes||[]).forEach(f=>o[f.item]=(o[f.item]||0)+N(f.w)));db.sales.forEach(e=>(e.items||[]).forEach(it=>o[it.item]=(o[it.item]||0)-N(it.w)));return o;}
+function purchaseCost(){let t=0;db.purchases.forEach(e=>t+=N(e.total));db.precuts.forEach(e=>t+=N(e.total));db.deposits.forEach(e=>(e.fixes||[]).forEach(f=>t+=N(f.w)*N(f.price)));return t;}
+function expenseAll(){return db.expenses.reduce((z,x)=>z+N(x.amount),0);}
+function saleAll(){return db.sales.reduce((z,x)=>z+N(x.total),0);}
+function itemsBrief(items){return (items||[]).map(it=>it.item).filter(Boolean).join(' + ')||'-';}
+function topBuy(){const m={};const add=(p,i,w,a)=>{if(!p||!i)return;const k=p+'|'+i;if(!m[k])m[k]={person:p,item:i,w:0,amount:0};m[k].w+=N(w);m[k].amount+=N(a);};db.purchases.forEach(e=>(e.items||[]).forEach(it=>add(e.person,it.item,it.w,N(it.w)*N(it.price))));db.precuts.forEach(e=>(e.items||[]).forEach(it=>add(e.person,it.item,it.w,N(it.w)*N(it.price))));db.deposits.forEach(e=>(e.fixes||[]).forEach(f=>add(e.person,f.item,f.w,N(f.w)*N(f.price))));return Object.values(m).map(r=>({...r,avg:r.w>0?r.amount/r.w:0})).sort((a,b)=>b.amount-a.amount).slice(0,20);}
+function topSale(){const m={};db.sales.forEach(e=>(e.items||[]).forEach(it=>{if(!e.person||!it.item)return;const k=e.person+'|'+it.item;if(!m[k])m[k]={person:e.person,item:it.item,w:0,amount:0};m[k].w+=N(it.w);m[k].amount+=N(it.w)*N(it.price);}));return Object.values(m).map(r=>({...r,avg:r.w>0?r.amount/r.w:0})).sort((a,b)=>b.amount-a.amount).slice(0,20);}
+function carWeight(c){return (c.items||[]).reduce((z,it)=>z+N(it.bags)*N(it.weightPerBag),0);}
+function carFee(c){return N(c.carRate)*carWeight(c);}
+function pendingItems(person){
+  const m={};
+  db.sales.filter(s=>s.person===person).forEach(s=>(s.items||[]).forEach(it=>{if(!m[it.item])m[it.item]={item:it.item,sold:0,loaded:0};m[it.item].sold+=N(it.w);}));
+  db.cars.filter(c=>c.person===person).forEach(c=>(c.items||[]).forEach(it=>{if(!m[it.item])m[it.item]={item:it.item,sold:0,loaded:0};m[it.item].loaded+=N(it.bags)*N(it.weightPerBag);}));
+  return Object.values(m).map(r=>({...r,pending:r.sold-r.loaded})).filter(r=>r.pending>0.001);
+}
+function allPending(){
+  const m={};
+  db.sales.forEach(s=>(s.items||[]).forEach(it=>{if(!m[s.person])m[s.person]={person:s.person,items:{}};if(!m[s.person].items[it.item])m[s.person].items[it.item]={sold:0,loaded:0};m[s.person].items[it.item].sold+=N(it.w);}));
+  db.cars.forEach(c=>(c.items||[]).forEach(it=>{if(!m[c.person])m[c.person]={person:c.person,items:{}};if(!m[c.person].items[it.item])m[c.person].items[it.item]={sold:0,loaded:0};m[c.person].items[it.item].loaded+=N(it.bags)*N(it.weightPerBag);}));
+  const r=[];Object.values(m).forEach(p=>{const it=[];Object.entries(p.items).forEach(([k,v])=>{const pd=v.sold-v.loaded;if(pd>0.001)it.push({item:k,sold:v.sold,loaded:v.loaded,pending:pd});});if(it.length)r.push({person:p.person,items:it});});
+  return r;
+}
+function pField(id,label='ဓာတ်ပုံ'){return `<div style="border:1px dashed var(--ib);padding:8px;border-radius:8px;margin-top:6px"><label>${label}</label><input id="${id}" type="file" accept="image/*" capture="environment" onchange="pv(this,'${id}p')"><div id="${id}p"></div></div>`;}
+function pv(inp,box){const f=inp.files[0],el=document.getElementById(box);if(!f){el.innerHTML='';return;}const r=new FileReader();r.onload=()=>el.innerHTML=`<img class="th" src="${r.result}" onclick="viewImg(this.src)">`;r.readAsDataURL(f);}
+function readP(id,cb){const f=document.getElementById(id)?.files[0];if(!f)return cb('');const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const mx=700,sc=Math.min(1,mx/Math.max(im.width,im.height));const c=document.createElement('canvas');c.width=Math.round(im.width*sc);c.height=Math.round(im.height*sc);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.65));};im.src=r.result;};r.readAsDataURL(f);}
+function readPP(id){return new Promise(res=>readP(id,res));}
+function viewImg(s){mod.innerHTML=`<div class="md" onclick="closeM()"><div class="bx" onclick="event.stopPropagation()" style="text-align:center"><button class="cl" onclick="closeM()">✕</button><img src="${s}" style="max-width:100%;max-height:75vh;border-radius:7px"></div></div>`;}
+function thumb(p,s=60){return p?`<img src="${p}" class="th" style="max-width:${s}px;max-height:${s}px" onclick="viewImg(this.src)">`:'';}
+function closeM(){mod.innerHTML='';}
+
+function addIt(px,item='',w='',price='',bags='',wb=false){
+  const b=document.getElementById(px+'_items');if(!b)return;
+  const d=document.createElement('div');d.className='itR';
+  d.innerHTML=`<select class="itS">${opts(item)}</select><input class="itW" type="number" step="any" placeholder="ပိဿာ" value="${w}" oninput="recalc('${px}')"><input class="itP" type="number" step="any" placeholder="ဈေး" value="${price}" oninput="recalc('${px}')">${wb?`<input class="itB" type="number" step="any" placeholder="အိတ်" value="${bags}">`:''}<button class="dg sm" type="button" onclick="this.parentElement.remove();recalc('${px}')">×</button>`;
+  b.appendChild(d);recalc(px);
+}
+function colIt(px,wb=false){
+  const b=document.getElementById(px+'_items');if(!b)return[];
+  const a=[];b.querySelectorAll('.itR').forEach(r=>{
+    const item=r.querySelector('.itS').value,w=N(r.querySelector('.itW').value),price=N(r.querySelector('.itP').value);
+    const bE=r.querySelector('.itB');const bags=bE?N(bE.value):0;
+    if(item&&(w>0||bags>0))a.push({item,w,price,bags});
+  });return a;
+}
+function recalc(px){
+  const items=colIt(px);
+  const gross=items.reduce((s,it)=>s+it.w*it.price,0);
+  const rate=N(document.getElementById(px+'_carRate')?.value);
+  const fl=items.reduce((s,it)=>s+Math.floor(N(it.w)),0);
+  const fee=rate*fl,net=gross-fee;
+  const g=document.getElementById(px+'_gross'),f=document.getElementById(px+'_fee'),n=document.getElementById(px+'_net'),fe=document.getElementById(px+'_floors'),wt=document.getElementById(px+'_weight');
+  if(g)g.textContent=money(gross);if(wt)wt.textContent=qty(items.reduce((s,it)=>s+N(it.w),0))+' ပိဿာ';if(fe)fe.textContent=fl;if(f)f.textContent=money(fee);if(n)n.textContent=money(net);
+}
+function addBg(px,item='',bags='',wpb=''){
+  const b=document.getElementById(px+'_bags');if(!b)return;
+  const d=document.createElement('div');d.className='bgR';
+  d.innerHTML=`<select class="bgS">${opts(item)}</select><input class="bgB" type="number" step="any" placeholder="အိတ်ရေ" value="${bags}" oninput="recalcCar('${px}')"><input class="bgW" type="number" step="any" placeholder="1အိတ်/ပိဿာ" value="${wpb}" oninput="recalcCar('${px}')"><button class="dg sm" type="button" onclick="this.parentElement.remove();recalcCar('${px}')">×</button>`;
+  b.appendChild(d);recalcCar(px);
+}
+function colBg(px){
+  const b=document.getElementById(px+'_bags');if(!b)return[];
+  const a=[];b.querySelectorAll('.bgR').forEach(r=>{
+    const item=r.querySelector('.bgS').value,bags=N(r.querySelector('.bgB').value),wpb=N(r.querySelector('.bgW').value);
+    if(item&&bags>0&&wpb>0)a.push({item,bags,weightPerBag:wpb});
+  });return a;
+}
+function recalcCar(px){
+  const items=colBg(px);
+  const tw=items.reduce((s,it)=>s+N(it.bags)*N(it.weightPerBag),0);
+  const rate=N(document.getElementById(px+'_carRate')?.value);
+  const w=document.getElementById(px+'_carWeight'),f=document.getElementById(px+'_carFee');
+  if(w)w.textContent=qty(tw)+' ပိဿာ';if(f)f.textContent=money(rate*tw);
+}
+
+/* ===== EDIT MODAL ===== */
+let _ec=null,_ep='',_ecp='',_eip='';
+function openEdit(kind,id){
+  const M={purchase:'purchases',sale:'sales',precut:'precuts',deposit:'deposits',loan:'loans',car:'cars',expense:'expenses'};
+  const an=M[kind];if(!an)return;
+  const r=(db[an]||[]).find(x=>x.id===id);if(!r)return;
+  _ec={kind,id,an,r};_ep=r.photo||'';_ecp=r.carPhoto||'';_eip=r.invoicePhoto||'';
+  const T={purchase:'📥 အဝယ်ပြင်',sale:'📤 အရောင်းပြင်',precut:'✂️ ကြိုဖြတ်ပြင်',deposit:'📦 အပ်ပြင်',loan:'💵 ချေးပြင်',car:'🚛 ကားတင်ပြင်',expense:'💸 စရိတ်ပြင်'};
+  let body='';
+  if(['purchase','sale','precut','deposit'].includes(kind))body=txEdit(kind,r);
+  else if(kind==='loan')body=loanEdit(r);
+  else if(kind==='car')body=carEdit(r);
+  else body=expEdit(r);
+  mod.innerHTML=`<div class="md" onclick="closeE()"><div class="bx" onclick="event.stopPropagation()"><button class="cl" onclick="closeE()">✕</button><h3 style="margin-top:0">${T[kind]}</h3>${body}<div style="margin-top:10px;display:flex;gap:6px"><button onclick="saveE()" style="flex:1">💾 သိမ်း</button><button class="sf" onclick="closeE()" style="flex:1">✖</button></div></div></div>`;
+  if(['purchase','sale','precut','deposit'].includes(kind)){const wb=kind!=='sale';(r.items||[]).forEach(it=>addIt('e',it.item,it.w,it.price,it.bags,wb));}
+  if(kind==='car')(r.items||[]).forEach(it=>addBg('e',it.item,it.bags,it.weightPerBag));
+  refreshEP();
+}
+function closeE(){_ec=null;_ep='';_ecp='';_eip='';closeM();}
+function selEP(inp,w){readEP(inp,w);}
+function readEP(inp,which){
+  const f=inp.files[0];if(!f)return;
+  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{con
