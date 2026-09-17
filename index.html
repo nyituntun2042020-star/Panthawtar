@@ -1,12 +1,12 @@
+
 <!doctype html>
 <html lang="my"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ပန်းသော်တာ</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#f4f7f6;color:#182321;font-size:15px}
-header{position:sticky;top:0;z-index:20;background:#0f766e;color:#fff;padding:10px 13px}
-header b{font-size:16px}
-.nav{position:sticky;top:40px;background:#fff;display:flex;gap:5px;overflow-x:auto;padding:6px;border-bottom:1px solid #ddd}
+header{background:#0f766e;color:#fff;padding:10px 13px;font-size:16px;font-weight:700}
+.nav{background:#fff;display:flex;gap:5px;overflow-x:auto;padding:6px;border-bottom:1px solid #ddd}
 .nav button{white-space:nowrap;font-size:12px;padding:6px 9px;background:#e8efee;color:#0f766e;border:0;border-radius:7px;font-weight:600}
 .wrap{max-width:1100px;margin:auto;padding:10px 12px 80px}
 .cd{background:#fff;border-radius:10px;padding:11px;margin:8px 0;box-shadow:0 1px 4px #0001}
@@ -24,179 +24,290 @@ button{border:0;border-radius:7px;padding:8px 11px;background:#0f766e;color:#fff
 .tot{background:#e8efee;padding:9px;border-radius:7px;margin-top:6px;font-size:12px}
 .tot div{display:flex;justify-content:space-between;padding:2px 0}
 .tot .net{font-size:14px;font-weight:800;border-top:1px solid #e0e5e4;padding-top:5px;margin-top:3px;color:#087443}
-.md{position:fixed;inset:0;background:#000c;z-index:50;display:flex;align-items:center;justify-content:center;padding:12px}
-.md .bx{background:#fff;border-radius:11px;max-width:600px;width:100%;max-height:92vh;overflow:auto;padding:14px}
-.cl{float:right;background:#444}
 </style></head><body>
-<header><b>🌿 ပန်းသော်တာ</b></header>
+<header>🌿 ပန်းသော်တာ</header>
 <div class="nav" id="nav"></div>
 <main class="wrap" id="app"></main>
-<div id="modal"></div>
 <script>
-const K='ptt_v1',app=document.getElementById('app'),mod=document.getElementById('modal');
-const N=x=>Number(x)||0,money=x=>N(x).toLocaleString('en-US',{maximumFractionDigits:2})+' ကျပ်',qty=x=>N(x).toLocaleString('en-US',{maximumFractionDigits:2});
-const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const uid=()=>Date.now()+Math.random(),sum=(a,k)=>(a||[]).reduce((z,x)=>z+N(x[k]),0);
-const DEF={items:['ဖာလာ','ဘောဖာလာ','ဂေဂေါဖာလာ'],customers:[],purchases:[],sales:[],cars:[]};
-let db={...DEF};
-try{const s=localStorage.getItem(K);if(s)db=JSON.parse(s)}catch(e){}
-function save(){try{localStorage.setItem(K,JSON.stringify(db))}catch(e){alert('Storage ပြည့်')}}
+var K='ptt_app_v2';
+var app=document.getElementById('app');
+var N=function(x){return Number(x)||0};
+var money=function(x){return N(x).toLocaleString('en-US',{maximumFractionDigits:2})+' ကျပ်'};
+var qty=function(x){return N(x).toLocaleString('en-US',{maximumFractionDigits:2})};
+var today=function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]})};
+var uid=function(){return Date.now()+Math.floor(Math.random()*1000)};
 
-function findC(n){return db.customers.find(c=>c.name===n)}
-function addC(n){n=String(n||'').trim();if(n&&!findC(n)){db.customers.push({name:n,phone:''});save()}}
-function opts(s=''){return db.items.map(i=>`<option ${i===s?'selected':''}>${esc(i)}</option>`).join('')}
-function itemStock(item){let a=0,b=0;db.purchases.forEach(p=>(p.items||[]).forEach(i=>{if(i.item===item)a+=N(i.w)}));db.sales.forEach(p=>(p.items||[]).forEach(i=>{if(i.item===item)b+=N(i.w)}));return a-b}
-function itemsBrief(items){return (items||[]).map(i=>i.item).join('+')||'-'}
-function cBal(name){const ss=db.sales.filter(s=>s.person===name),ps=db.purchases.filter(p=>p.person===name);
-  const st=ss.reduce((z,s)=>z+N(s.total),0),pt=ps.reduce((z,p)=>z+N(p.total),0);return {st,pt,net:st-pt}}
-function carWeight(c){return (c.items||[]).reduce((z,i)=>z+N(i.bags)*N(i.wpb),0)}
-function carFee(c){return N(c.carRate)*carWeight(c)}
-function pendingFor(person){const m={};
-  db.sales.filter(s=>s.person===person).forEach(s=>(s.items||[]).forEach(i=>{if(!m[i.item])m[i.item]={item:i.item,sold:0,loaded:0};m[i.item].sold+=N(i.w)}));
-  db.cars.filter(c=>c.person===person).forEach(c=>(c.items||[]).forEach(i=>{if(!m[i.item])m[i.item]={item:i.item,sold:0,loaded:0};m[i.item].loaded+=N(i.bags)*N(i.wpb)}));
-  return Object.values(m).map(r=>({...r,pending:r.sold-r.loaded})).filter(r=>r.pending>0.001)}
-function allPending(){const m={};
-  db.sales.forEach(s=>(s.items||[]).forEach(i=>{if(!m[s.person])m[s.person]={person:s.person,items:{}};if(!m[s.person].items[i.item])m[s.person].items[i.item]={sold:0,loaded:0};m[s.person].items[i.item].sold+=N(i.w)}));
-  db.cars.forEach(c=>(c.items||[]).forEach(i=>{if(!m[c.person])m[c.person]={person:c.person,items:{}};if(!m[c.person].items[i.item])m[c.person].items[i.item]={sold:0,loaded:0};m[c.person].items[i.item].loaded+=N(i.bags)*N(i.wpb)}));
-  const r=[];Object.values(m).forEach(p=>{const it=[];Object.entries(p.items).forEach(([k,v])=>{const pd=v.sold-v.loaded;if(pd>0.001)it.push({item:k,pending:pd})});if(it.length)r.push({person:p.person,items:it})});return r}
+var DEF={items:['ဖာလာ','ဘောဖာလာ','ဂေဂေါဖာလာ'],customers:[],purchases:[],sales:[],cars:[]};
+var db={items:DEF.items.slice(),customers:[],purchases:[],sales:[],cars:[]};
+try{var s=localStorage.getItem(K);if(s){var parsed=JSON.parse(s);if(parsed&&parsed.items)db=parsed;}}catch(e){}
 
-/* Multi-item */
-function addIt(px,item='',w='',price=''){
-  const b=document.getElementById(px+'_items');if(!b)return;
-  const d=document.createElement('div');d.className='itR';
-  d.innerHTML=`<select class="itS">${opts(item)}</select><input class="itW" type="number" step="any" placeholder="ပိဿာ" value="${w}" oninput="recalc('${px}')"><input class="itP" type="number" step="any" placeholder="ဈေး" value="${price}" oninput="recalc('${px}')"><button class="dg sm" type="button" onclick="this.parentElement.remove();recalc('${px}')">×</button>`;
-  b.appendChild(d);recalc(px)}
-function colIt(px){const b=document.getElementById(px+'_items');if(!b)return[];const a=[];
-  b.querySelectorAll('.itR').forEach(r=>{const item=r.querySelector('.itS').value,w=N(r.querySelector('.itW').value),price=N(r.querySelector('.itP').value);
-  if(item&&w>0)a.push({item,w,price})});return a}
-function recalc(px){const items=colIt(px);const gross=items.reduce((s,i)=>s+i.w*i.price,0);
-  const rate=N(document.getElementById(px+'_carRate')?.value);const fl=items.reduce((s,i)=>s+Math.floor(N(i.w)),0);const fee=rate*fl;
-  const g=document.getElementById(px+'_gross'),f=document.getElementById(px+'_fee'),n=document.getElementById(px+'_net'),fe=document.getElementById(px+'_floors'),wt=document.getElementById(px+'_weight');
-  if(g)g.textContent=money(gross);if(wt)wt.textContent=qty(items.reduce((s,i)=>s+N(i.w),0))+' ပိဿာ';if(fe)fe.textContent=fl;if(f)f.textContent=money(fee);if(n)n.textContent=money(gross-fee)}
+function save(){try{localStorage.setItem(K,JSON.stringify(db));}catch(e){alert('Storage ပြည့်နေပါ')}}
 
-/* Car bags */
-function addBg(px,item='',bags='',wpb=''){
-  const b=document.getElementById(px+'_bags');if(!b)return;
-  const d=document.createElement('div');d.className='bgR';
-  d.innerHTML=`<select class="bgS">${opts(item)}</select><input class="bgB" type="number" step="any" placeholder="အိတ်ရေ" value="${bags}" oninput="recalcCar('${px}')"><input class="bgW" type="number" step="any" placeholder="1အိတ်/ပိဿာ" value="${wpb}" oninput="recalcCar('${px}')"><button class="dg sm" type="button" onclick="this.parentElement.remove();recalcCar('${px}')">×</button>`;
-  b.appendChild(d);recalcCar(px)}
-function colBg(px){const b=document.getElementById(px+'_bags');if(!b)return[];const a=[];
-  b.querySelectorAll('.bgR').forEach(r=>{const item=r.querySelector('.bgS').value,bags=N(r.querySelector('.bgB').value),wpb=N(r.querySelector('.bgW').value);
-  if(item&&bags>0&&wpb>0)a.push({item,bags,wpb})});return a}
-function recalcCar(px){const items=colBg(px);const tw=items.reduce((s,i)=>s+N(i.bags)*N(i.wpb),0);
-  const rate=N(document.getElementById(px+'_carRate')?.value);
-  const w=document.getElementById(px+'_carWeight'),f=document.getElementById(px+'_carFee');
-  if(w)w.textContent=qty(tw)+' ပိဿာ';if(f)f.textContent=money(rate*tw)}
+function findC(n){for(var i=0;i<db.customers.length;i++){if(db.customers[i].name===n)return db.customers[i];}return null}
+function addC(n){n=String(n||'').trim();if(!n)return;if(!findC(n)){db.customers.push({name:n,phone:''});save();}}
+function opts(sel){sel=sel||'';var h='';for(var i=0;i<db.items.length;i++){var it=db.items[i];h+='<option'+(it===sel?' selected':'')+'>'+esc(it)+'</option>';}return h}
+function itemsBrief(items){if(!items||!items.length)return '-';var a=[];for(var i=0;i<items.length;i++)a.push(items[i].item);return a.join('+');}
+function itemStock(item){var a=0,b=0;for(var i=0;i<db.purchases.length;i++){var p=db.purchases[i];if(p.items)for(var j=0;j<p.items.length;j++){if(p.items[j].item===item)a+=N(p.items[j].w);}}for(var i=0;i<db.sales.length;i++){var p=db.sales[i];if(p.items)for(var j=0;j<p.items.length;j++){if(p.items[j].item===item)b+=N(p.items[j].w);}}return a-b;}
+function cBal(name){var st=0,pt=0;for(var i=0;i<db.sales.length;i++){if(db.sales[i].person===name)st+=N(db.sales[i].total);}for(var i=0;i<db.purchases.length;i++){if(db.purchases[i].person===name)pt+=N(db.purchases[i].total);}return {st:st,pt:pt,net:st-pt};}
+function carWeight(c){var t=0;if(c.items)for(var i=0;i<c.items.length;i++)t+=N(c.items[i].bags)*N(c.items[i].wpb);return t;}
+function carFee(c){return N(c.carRate)*carWeight(c);}
+function pendingFor(person){var m={};for(var i=0;i<db.sales.length;i++){var s=db.sales[i];if(s.person===person&&s.items)for(var j=0;j<s.items.length;j++){var it=s.items[j];if(!m[it.item])m[it.item]={item:it.item,sold:0,loaded:0};m[it.item].sold+=N(it.w);}}for(var i=0;i<db.cars.length;i++){var c=db.cars[i];if(c.person===person&&c.items)for(var j=0;j<c.items.length;j++){var it=c.items[j];if(!m[it.item])m[it.item]={item:it.item,sold:0,loaded:0};m[it.item].loaded+=N(it.bags)*N(it.wpb);}}var r=[];for(var k in m){var v=m[k];v.pending=v.sold-v.loaded;if(v.pending>0.001)r.push(v);}return r;}
+function allPending(){var m={};for(var i=0;i<db.sales.length;i++){var s=db.sales[i];if(!s.items)continue;for(var j=0;j<s.items.length;j++){var it=s.items[j];if(!m[s.person])m[s.person]={person:s.person,items:{}};if(!m[s.person].items[it.item])m[s.person].items[it.item]={sold:0,loaded:0};m[s.person].items[it.item].sold+=N(it.w);}}for(var i=0;i<db.cars.length;i++){var c=db.cars[i];if(!c.items)continue;for(var j=0;j<c.items.length;j++){var it=c.items[j];if(!m[c.person])m[c.person]={person:c.person,items:{}};if(!m[c.person].items[it.item])m[c.person].items[it.item]={sold:0,loaded:0};m[c.person].items[it.item].loaded+=N(it.bags)*N(it.wpb);}}var r=[];for(var p in m){var o=m[p];var arr=[];for(var k in o.items){var v=o.items[k];var pd=v.sold-v.loaded;if(pd>0.001)arr.push({item:k,pending:pd});}if(arr.length)r.push({person:p,items:arr});}return r;}
 
-function curP(){return location.hash.slice(1)||'home'}
+function addIt(px,item,w,price){
+  item=item||'';w=w||'';price=price||'';
+  var b=document.getElementById(px+'_items');if(!b)return;
+  var d=document.createElement('div');d.className='itR';
+  d.innerHTML='<select class="itS">'+opts(item)+'</select><input class="itW" type="number" step="any" placeholder="ပိဿာ" value="'+w+'" oninput="recalc(\''+px+'\')"><input class="itP" type="number" step="any" placeholder="ဈေး" value="'+price+'" oninput="recalc(\''+px+'\')"><button class="dg sm" type="button" onclick="this.parentElement.remove();recalc(\''+px+'\')">×</button>';
+  b.appendChild(d);recalc(px);
+}
+function colIt(px){
+  var b=document.getElementById(px+'_items');if(!b)return[];
+  var rows=b.querySelectorAll('.itR');var a=[];
+  for(var i=0;i<rows.length;i++){var r=rows[i];var item=r.querySelector('.itS').value;var w=N(r.querySelector('.itW').value);var price=N(r.querySelector('.itP').value);if(item&&w>0)a.push({item:item,w:w,price:price});}
+  return a;
+}
+function recalc(px){
+  var items=colIt(px);var gross=0;for(var i=0;i<items.length;i++)gross+=items[i].w*items[i].price;
+  var rateEl=document.getElementById(px+'_carRate');var rate=rateEl?N(rateEl.value):0;
+  var fl=0;for(var i=0;i<items.length;i++)fl+=Math.floor(N(items[i].w));
+  var fee=rate*fl;
+  var tw=0;for(var i=0;i<items.length;i++)tw+=N(items[i].w);
+  var g=document.getElementById(px+'_gross');if(g)g.textContent=money(gross);
+  var wt=document.getElementById(px+'_weight');if(wt)wt.textContent=qty(tw)+' ပိဿာ';
+  var fe=document.getElementById(px+'_floors');if(fe)fe.textContent=fl;
+  var f=document.getElementById(px+'_fee');if(f)f.textContent=money(fee);
+  var n=document.getElementById(px+'_net');if(n)n.textContent=money(gross-fee);
+}
+function addBg(px,item,bags,wpb){
+  item=item||'';bags=bags||'';wpb=wpb||'';
+  var b=document.getElementById(px+'_bags');if(!b)return;
+  var d=document.createElement('div');d.className='bgR';
+  d.innerHTML='<select class="bgS">'+opts(item)+'</select><input class="bgB" type="number" step="any" placeholder="အိတ်ရေ" value="'+bags+'" oninput="recalcCar(\''+px+'\')"><input class="bgW" type="number" step="any" placeholder="1အိတ်/ပိဿာ" value="'+wpb+'" oninput="recalcCar(\''+px+'\')"><button class="dg sm" type="button" onclick="this.parentElement.remove();recalcCar(\''+px+'\')">×</button>';
+  b.appendChild(d);recalcCar(px);
+}
+function colBg(px){
+  var b=document.getElementById(px+'_bags');if(!b)return[];
+  var rows=b.querySelectorAll('.bgR');var a=[];
+  for(var i=0;i<rows.length;i++){var r=rows[i];var item=r.querySelector('.bgS').value;var bags=N(r.querySelector('.bgB').value);var wpb=N(r.querySelector('.bgW').value);if(item&&bags>0&&wpb>0)a.push({item:item,bags:bags,wpb:wpb});}
+  return a;
+}
+function recalcCar(px){
+  var items=colBg(px);var tw=0;for(var i=0;i<items.length;i++)tw+=N(items[i].bags)*N(items[i].wpb);
+  var rateEl=document.getElementById(px+'_carRate');var rate=rateEl?N(rateEl.value):0;
+  var w=document.getElementById(px+'_carWeight');if(w)w.textContent=qty(tw)+' ပိဿာ';
+  var f=document.getElementById(px+'_carFee');if(f)f.textContent=money(rate*tw);
+}
+
+function shell(t,b){app.innerHTML='<h2 style="margin:5px 0 8px;font-size:18px">'+t+'</h2>'+b;}
+function nav(p){
+  var list=[['home','🏠'],['purchase','📥 အဝယ်'],['sale','📤 အရောင်း'],['car','🚛 ကားတင်'],['customers','👥 ဖောက်သည်'],['stock','📦 Stock'],['settings','⚙️']];
+  var h='';for(var i=0;i<list.length;i++){h+='<button onclick="go(\''+list[i][0]+'\')">'+list[i][1]+'</button>';}
+  document.getElementById('nav').innerHTML=h;
+}
 function go(p){location.hash=p}
 function render(p){
-  const list=[['home','🏠'],['purchase','📥 အဝယ်'],['sale','📤 အရောင်း'],['car','🚛 ကားတင်'],['customers','👥 ဖောက်သည်'],['stock','📦 Stock'],['settings','⚙️']];
-  document.getElementById('nav').innerHTML=list.map(x=>`<button onclick="go('${x[0]}')">${x[1]}</button>`).join('');
-  if(p.startsWith('customer/')){custDetail(decodeURIComponent(p.slice(9)));return}
-  ({home,purchase,sale,car,customers,stock,settings}[p]||home)()}
-function shell(t,b){app.innerHTML=`<h2 style="margin:5px 0 8px;font-size:18px">${t}</h2>${b}`}
-window.addEventListener('hashchange',()=>render(curP()));
+  nav(p);
+  if(p.indexOf('customer/')===0){custDetail(decodeURIComponent(p.slice(9)));return;}
+  if(p==='purchase'){purchase();return;}
+  if(p==='sale'){sale();return;}
+  if(p==='car'){car();return;}
+  if(p==='customers'){customers();return;}
+  if(p==='stock'){stock();return;}
+  if(p==='settings'){settings();return;}
+  home();
+}
+function curP(){var h=location.hash.slice(1);return h||'home';}
+window.addEventListener('hashchange',function(){render(curP())});
 
 function home(){
-  const rev=db.sales.reduce((z,x)=>z+N(x.total),0),cog=db.purchases.reduce((z,x)=>z+N(x.total),0);
-  const pend=allPending();
-  shell('🏠 Dashboard',`<div class="row">
-    <div class="cd">အရောင်း<br><b class="st ps">${money(rev)}</b></div>
-    <div class="cd">အဝယ်<br><b class="st">${money(cog)}</b></div>
-    <div class="cd">အမြတ်<br><b class="st ${rev-cog>=0?'ps':'ng'}">${money(rev-cog)}</b></div></div>
-    <div class="cd"><h3>📦 Stock</h3><table class="tbl"><tr><th>ပစ္စည်း</th><th>ပိဿာ</th></tr>
-    ${db.items.map(k=>`<tr><td>${esc(k)}</td><td><b>${qty(itemStock(k))}</b></td></tr>`).join('')}</table></div>
-    ${pend.length?`<div class="cd"><h3>🚛 ကားတင်ရန် ကျန်</h3>${pend.slice(0,5).map(p=>`<div class="rc"><div><b>${esc(p.person)}</b></div><div class="mt">${p.items.map(i=>esc(i.item)+': '+qty(i.pending)+' ပိဿာ').join(' · ')}</div></div>`).join('')}</div>`:''}`)}
+  var rev=0;for(var i=0;i<db.sales.length;i++)rev+=N(db.sales[i].total);
+  var cog=0;for(var i=0;i<db.purchases.length;i++)cog+=N(db.purchases[i].total);
+  var pend=allPending();
+  var stockH='';for(var i=0;i<db.items.length;i++){var k=db.items[i];stockH+='<tr><td>'+esc(k)+'</td><td><b>'+qty(itemStock(k))+'</b></td></tr>';}
+  var pendH='';
+  if(pend.length){
+    pendH='<div class="cd"><h3>🚛 ကားတင်ရန် ကျန်</h3>';
+    for(var i=0;i<Math.min(5,pend.length);i++){
+      var p=pend[i];var s='';
+      for(var j=0;j<p.items.length;j++)s+=esc(p.items[j].item)+': '+qty(p.items[j].pending)+' ပိဿာ · ';
+      pendH+='<div class="rc"><div><b>'+esc(p.person)+'</b></div><div class="mt">'+s+'</div></div>';
+    }
+    pendH+='</div>';
+  }
+  shell('🏠 Dashboard','<div class="row">'+
+    '<div class="cd">အရောင်း<br><b class="st ps">'+money(rev)+'</b></div>'+
+    '<div class="cd">အဝယ်<br><b class="st">'+money(cog)+'</b></div>'+
+    '<div class="cd">အမြတ်<br><b class="st '+(rev-cog>=0?'ps':'ng')+'">'+money(rev-cog)+'</b></div></div>'+
+    '<div class="cd"><h3>📦 Stock</h3><table class="tbl"><tr><th>ပစ္စည်း</th><th>ပိဿာ</th></tr>'+stockH+'</table></div>'+pendH);
+}
 
 function entryForm(px,kind,title){
-  const isSale=kind==='sale';
-  return `<div class="cd"><h3>${title}</h3>
-  <div class="row"><label>ရက်စွဲ <input id="${px}_date" type="date" value="${today()}"></label><label>Customer <input id="${px}_person" list="${px}L"><datalist id="${px}L">${db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('')}</datalist></label></div>
-  ${!isSale?`<div class="row"><label>ကားဆရာ <input id="${px}_driver"></label><label>ကားခ rate <input id="${px}_carRate" type="number" step="any" value="0" oninput="recalc('${px}')"></label></div>`:''}
-  <label>📦 ပစ္စည်းများ</label><div id="${px}_items"></div>
-  <button class="sf sm" type="button" onclick="addIt('${px}')">➕ ထည့်</button>
-  <div class="tot"><div><span>အလေးချိန်:</span><b id="${px}_weight">0</b></div><div><span>Gross:</span><b id="${px}_gross">0</b></div>${!isSale?`<div><span>ကားခ:</span><b id="${px}_fee">0</b></div><div class="net"><span>Net:</span><b id="${px}_net">0</b></div>`:''}</div>
-  <label>မှတ်ချက် <input id="${px}_note"></label>
-  <button onclick="saveEntry('${px}','${kind}')">💾 သိမ်း</button></div>`}
+  var isSale=kind==='sale';
+  var custOpts='';for(var i=0;i<db.customers.length;i++)custOpts+='<option value="'+esc(db.customers[i].name)+'"></option>';
+  return '<div class="cd"><h3>'+title+'</h3>'+
+  '<div class="row"><label>ရက်စွဲ <input id="'+px+'_date" type="date" value="'+today()+'"></label><label>Customer <input id="'+px+'_person" list="'+px+'L"><datalist id="'+px+'L">'+custOpts+'</datalist></label></div>'+
+  (isSale?'':'<div class="row"><label>ကားဆရာ <input id="'+px+'_driver"></label><label>ကားခ rate <input id="'+px+'_carRate" type="number" step="any" value="0" oninput="recalc(\''+px+'\')"></label></div>')+
+  '<label>📦 ပစ္စည်းများ</label><div id="'+px+'_items"></div>'+
+  '<button class="sf sm" type="button" onclick="addIt(\''+px+'\')">➕ ထည့်</button>'+
+  '<div class="tot"><div><span>အလေးချိန်:</span><b id="'+px+'_weight">0</b></div><div><span>Gross:</span><b id="'+px+'_gross">0</b></div>'+
+  (isSale?'':'<div><span>ကားခ:</span><b id="'+px+'_fee">0</b></div><div class="net"><span>Net:</span><b id="'+px+'_net">0</b></div>')+'</div>'+
+  '<label>မှတ်ချက် <input id="'+px+'_note"></label>'+
+  '<button onclick="saveEntry(\''+px+'\',\''+kind+'\')">💾 သိမ်း</button></div>';
+}
 
 function saveEntry(px,kind){
-  const items=colIt(px);if(!items.length)return alert('ပစ္စည်း');
-  const person=document.getElementById(px+'_person').value.trim();if(!person)return alert('Customer');
-  const isSale=kind==='sale';const an={purchase:'purchases',sale:'sales'}[kind];
+  var items=colIt(px);if(!items.length){alert('ပစ္စည်း ဖြည့်ပါ');return;}
+  var person=document.getElementById(px+'_person').value.trim();if(!person){alert('Customer ဖြည့်ပါ');return;}
+  var isSale=kind==='sale';
   addC(person);
-  const rec={id:uid(),date:document.getElementById(px+'_date').value,person,items,note:document.getElementById(px+'_note').value};
-  if(!isSale){rec.driverName=document.getElementById(px+'_driver').value.trim();rec.carRate=N(document.getElementById(px+'_carRate').value);
-    rec.carFee=rec.carRate*items.reduce((s,i)=>s+Math.floor(N(i.w)),0)}
-  rec.grossAmount=items.reduce((s,i)=>s+i.w*i.price,0);
-  rec.total=rec.grossAmount-(isSale?0:N(rec.carFee));
-  db[an].push(rec);save();alert('✅');render(kind)}
+  var rec={id:uid(),date:document.getElementById(px+'_date').value,person:person,items:items,note:document.getElementById(px+'_note').value};
+  if(!isSale){
+    rec.driverName=document.getElementById(px+'_driver').value.trim();
+    rec.carRate=N(document.getElementById(px+'_carRate').value);
+    var fl=0;for(var i=0;i<items.length;i++)fl+=Math.floor(N(items[i].w));
+    rec.carFee=rec.carRate*fl;
+  }
+  var gross=0;for(var i=0;i<items.length;i++)gross+=items[i].w*items[i].price;
+  rec.grossAmount=gross;
+  rec.total=gross-(isSale?0:N(rec.carFee));
+  if(kind==='purchase')db.purchases.push(rec);else db.sales.push(rec);
+  save();alert('✅');render(kind);
+}
 
 function txList(kind,list){
   if(!list.length)return '<div class="ep">မရှိ</div>';
-  return [...list].sort((a,b)=>String(b.date).localeCompare(String(a.date))).slice(0,30).map(x=>{
-    const its=(x.items||[]).map(i=>`<div style="margin-left:10px">• ${esc(i.item)} · ${qty(i.w)}×${money(i.price)} = ${money(i.w*i.price)}</div>`).join('');
-    const car=kind!=='sale'&&(N(x.carFee)>0||x.driverName)?`<div class="mt">🚛 ${esc(x.driverName||'')} · ကားခ ${money(x.carFee)}</div>`:'';
-    const lbl=kind==='purchase'?'အဝယ်':'အရောင်း';
-    return `<div class="rc"><div><b>${lbl}</b> ${esc(x.person)} · ${esc(x.date)}</div>${its}${car}<div><b>Total: ${money(N(x.total))}</b></div><div class="row" style="margin-top:4px"><button class="dg sm" onclick="delTx('${({purchase:'purchases',sale:'sales'})[kind]}',${x.id})">🗑️</button></div></div>`}).join('')}
-function delTx(t,id){if(!confirm('ဖျက်မှာ?'))return;db[t]=db[t].filter(x=>x.id!==id);save();render(curP())}
+  var sorted=list.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date))}).slice(0,30);
+  var h='';
+  for(var k=0;k<sorted.length;k++){
+    var x=sorted[k];
+    var its='';if(x.items)for(var i=0;i<x.items.length;i++){var it=x.items[i];its+='<div style="margin-left:10px">• '+esc(it.item)+' · '+qty(it.w)+'×'+money(it.price)+' = '+money(it.w*it.price)+'</div>';}
+    var car='';
+    if(kind!=='sale'&&(N(x.carFee)>0||x.driverName))car='<div class="mt">🚛 '+(x.driverName?esc(x.driverName)+' · ':'')+'ကားခ '+money(x.carFee)+'</div>';
+    var lbl=kind==='purchase'?'အဝယ်':'အရောင်း';
+    var coll=kind==='purchase'?'purchases':'sales';
+    h+='<div class="rc"><div><b>'+lbl+'</b> '+esc(x.person)+' · '+esc(x.date)+'</div>'+its+car+'<div><b>Total: '+money(N(x.total))+'</b></div>'+(x.note?'<div class="mt">📝 '+esc(x.note)+'</div>':'')+'<div class="row" style="margin-top:4px"><button class="dg sm" onclick="delTx(\''+coll+'\','+x.id+')">🗑️</button></div></div>';
+  }
+  return h;
+}
+function delTx(t,id){if(!confirm('ဖျက်မှာ?'))return;var a=[];for(var i=0;i<db[t].length;i++){if(db[t][i].id!==id)a.push(db[t][i]);}db[t]=a;save();render(curP());}
 
-function purchase(){shell('📥 အဝယ်',`${entryForm('p','purchase','အဝယ်အသစ်')}
-  <div class="cd"><h3>📋 (${db.purchases.length})</h3>${txList('purchase',db.purchases)}</div>`);addIt('p')}
-function sale(){shell('📤 အရောင်း',`${entryForm('s','sale','အရောင်းအသစ်')}
-  <div class="cd"><h3>📋 (${db.sales.length})</h3>${txList('sale',db.sales)}</div>`);addIt('s')}
+function purchase(){
+  var h=entryForm('p','purchase','အဝယ်အသစ်');
+  h+='<div class="cd"><h3>📋 ('+db.purchases.length+')</h3>'+txList('purchase',db.purchases)+'</div>';
+  shell('📥 အဝယ်',h);addIt('p');
+}
+function sale(){
+  var h=entryForm('s','sale','အရောင်းအသစ်');
+  h+='<div class="cd"><h3>📋 ('+db.sales.length+')</h3>'+txList('sale',db.sales)+'</div>';
+  shell('📤 အရောင်း',h);addIt('s');
+}
 
 function car(){
-  const pend=allPending();
-  const list=[...db.cars].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  shell('🚛 ကားတင်',`<div class="cd"><h3>ကားတင်အသစ်</h3>
-  <div class="row"><label>ရက်စွဲ <input id="c_date" type="date" value="${today()}"></label><label>Customer <input id="c_person" list="cL" oninput="showPend()"><datalist id="cL">${db.customers.map(c=>`<option value="${esc(c.name)}"></option>`).join('')}</datalist></label></div>
-  <div id="pendBox" class="cd" style="display:none;background:#e8efee"></div>
-  <div class="row"><label>ကားနံပါတ် <input id="c_carNo"></label><label>ကားဆရာ <input id="c_driver"></label></div>
-  <div class="row"><label>ဖုန်း <input id="c_driverPhone"></label></div>
-  <label>📦 ကုန်များ</label><div id="c_bags"></div>
-  <button class="sf sm" type="button" onclick="addBg('c')">➕ ထည့်</button>
-  <div class="row"><label>ကားခ rate <input id="c_carRate" type="number" step="any" value="0" oninput="recalcCar('c')"></label></div>
-  <div class="tot"><div><span>Total ကုန်ချိန်:</span><b id="c_carWeight">0</b></div><div class="net"><span>ကားခ:</span><b id="c_carFee">0</b></div></div>
-  <label>ပို့ရမယ့်နေရာ <input id="c_deliverTo"></label>
-  <button onclick="saveCar()">💾 သိမ်း</button></div>
-  ${pend.length?`<div class="cd"><h3>⏳ ကားတင်ရန် ကျန် (${pend.length})</h3>${pend.map(p=>`<div class="rc"><div><b>${esc(p.person)}</b></div>${p.items.map(i=>`<div class="mt">• ${esc(i.item)} — ကျန် <b>${qty(i.pending)} ပိဿာ</b></div>`).join('')}<button class="sf sm" style="margin-top:4px" onclick="pref('${esc(p.person).replace(/'/g,"\\'")}')">🚛 တင်မည်</button></div>`).join('')}</div>`:''}
-  <div class="cd"><h3>📋 ကားတင်မှတ်တမ်း (${list.length})</h3>
-  ${list.length?list.map(c=>{const tw=carWeight(c);return `<div class="rc"><div><b>${esc(c.person)}</b> · ${esc(c.date)}${c.carNo?' · '+esc(c.carNo):''}</div><div class="mt">${esc(c.driverName||'')} · ${esc(c.driverPhone||'')}</div>${(c.items||[]).map(i=>`<div style="margin-left:10px">• ${esc(i.item)} · ${qty(i.bags)}အိတ် × ${qty(i.wpb)} = <b>${qty(i.bags*i.wpb)}</b></div>`).join('')}<div class="mt">Total: <b>${qty(tw)}ပိဿာ</b></div><div><b>ကားခ: ${money(carFee(c))}</b></div>${c.deliverTo?`<div class="mt">📍 ${esc(c.deliverTo)}</div>`:''}<button class="dg sm" onclick="delTx('cars',${c.id})">🗑️</button></div>`}).join(''):'<div class="ep">မရှိ</div>'}
-  </div>`);addBg('c')}
-function showPend(){const p=document.getElementById('c_person')?.value.trim();const b=document.getElementById('pendBox');if(!b)return;
-  if(!p){b.style.display='none';return}
-  const items=pendingFor(p);
-  if(!items.length){b.style.display='block';b.innerHTML=`⚠️ ${esc(p)} အတွက် ကျန်ကုန် မရှိ`;return}
-  b.style.display='block';b.innerHTML=`<b>⏳ ကျန်ကုန်:</b><br>${items.map(i=>`• ${esc(i.item)} — <b>${qty(i.pending)} ပိဿာ</b>`).join('<br>')}`}
-function pref(p){const el=document.getElementById('c_person');if(el){el.value=p;showPend();window.scrollTo({top:0,behavior:'smooth'})}}
-function saveCar(){const person=document.getElementById('c_person').value.trim();if(!person)return alert('Customer');
-  const items=colBg('c');if(!items.length)return alert('ကုန်');
+  var pend=allPending();
+  var custOpts='';for(var i=0;i<db.customers.length;i++)custOpts+='<option value="'+esc(db.customers[i].name)+'"></option>';
+  var sorted=db.cars.slice().sort(function(a,b){return String(b.date).localeCompare(String(a.date))});
+  var carsH='';
+  for(var k=0;k<sorted.length;k++){
+    var c=sorted[k];var tw=carWeight(c);
+    var bagsH='';if(c.items)for(var i=0;i<c.items.length;i++){var it=c.items[i];bagsH+='<div style="margin-left:10px">• '+esc(it.item)+' · '+qty(it.bags)+'အိတ် × '+qty(it.wpb)+' = <b>'+qty(it.bags*it.wpb)+'</b></div>';}
+    carsH+='<div class="rc"><div><b>'+esc(c.person)+'</b> · '+esc(c.date)+(c.carNo?' · '+esc(c.carNo):'')+'</div><div class="mt">'+(c.driverName?'👤 '+esc(c.driverName)+' · ':'')+(c.driverPhone?'📞 '+esc(c.driverPhone):'')+'</div>'+bagsH+'<div class="mt">Total: <b>'+qty(tw)+'ပိဿာ</b> · rate '+money(c.carRate)+'</div><div><b>ကားခ: '+money(carFee(c))+'</b></div>'+(c.deliverTo?'<div class="mt">📍 '+esc(c.deliverTo)+'</div>':'')+'<button class="dg sm" onclick="delTx(\'cars\','+c.id+')">🗑️</button></div>';
+  }
+  var pendH='';
+  if(pend.length){
+    pendH='<div class="cd"><h3>⏳ ကားတင်ရန် ကျန် ('+pend.length+')</h3>';
+    for(var i=0;i<pend.length;i++){
+      var p=pend[i];var itemsH='';
+      for(var j=0;j<p.items.length;j++)itemsH+='<div class="mt">• '+esc(p.items[j].item)+' — ကျန် <b>'+qty(p.items[j].pending)+' ပိဿာ</b></div>';
+      pendH+='<div class="rc"><div><b>'+esc(p.person)+'</b></div>'+itemsH+'<button class="sf sm" style="margin-top:4px" onclick="pref(\''+esc(p.person).replace(/'/g,"\\'")+'\')">🚛 တင်မည်</button></div>';
+    }
+    pendH+='</div>';
+  }
+  var form='<div class="cd"><h3>ကားတင်အသစ်</h3>'+
+    '<div class="row"><label>ရက်စွဲ <input id="c_date" type="date" value="'+today()+'"></label><label>Customer <input id="c_person" list="cL" oninput="showPend()"><datalist id="cL">'+custOpts+'</datalist></label></div>'+
+    '<div id="pendBox" class="cd" style="display:none;background:#e8efee"></div>'+
+    '<div class="row"><label>ကားနံပါတ် <input id="c_carNo"></label><label>ကားဆရာ <input id="c_driver"></label></div>'+
+    '<div class="row"><label>ဖုန်း <input id="c_driverPhone"></label></div>'+
+    '<label>📦 ကုန်များ</label><div id="c_bags"></div>'+
+    '<button class="sf sm" type="button" onclick="addBg(\'c\')">➕ ထည့်</button>'+
+    '<div class="row"><label>ကားခ rate <input id="c_carRate" type="number" step="any" value="0" oninput="recalcCar(\'c\')"></label></div>'+
+    '<div class="tot"><div><span>Total ကုန်ချိန်:</span><b id="c_carWeight">0</b></div><div class="net"><span>ကားခ:</span><b id="c_carFee">0</b></div></div>'+
+    '<label>ပို့ရမယ့်နေရာ <input id="c_deliverTo"></label>'+
+    '<button onclick="saveCar()">💾 သိမ်း</button></div>';
+  shell('🚛 ကားတင်',form+pendH+'<div class="cd"><h3>📋 ကားတင်မှတ်တမ်း ('+db.cars.length+')</h3>'+(carsH||'<div class="ep">မရှိ</div>')+'</div>');
+  addBg('c');
+}
+function showPend(){
+  var p=document.getElementById('c_person').value.trim();
+  var b=document.getElementById('pendBox');if(!b)return;
+  if(!p){b.style.display='none';return;}
+  var items=pendingFor(p);
+  if(!items.length){b.style.display='block';b.innerHTML='⚠️ '+esc(p)+' အတွက် ကျန်ကုန် မရှိ';return;}
+  var h='<b>⏳ ကျန်ကုန်:</b><br>';
+  for(var i=0;i<items.length;i++)h+='• '+esc(items[i].item)+' — <b>'+qty(items[i].pending)+' ပိဿာ</b><br>';
+  b.style.display='block';b.innerHTML=h;
+}
+function pref(p){var el=document.getElementById('c_person');if(el){el.value=p;showPend();window.scrollTo({top:0,behavior:'smooth'});}}
+function saveCar(){
+  var person=document.getElementById('c_person').value.trim();if(!person){alert('Customer ဖြည့်ပါ');return;}
+  var items=colBg('c');if(!items.length){alert('ကုန် ဖြည့်ပါ');return;}
   addC(person);
-  db.cars.push({id:uid(),date:document.getElementById('c_date').value,person,carNo:document.getElementById('c_carNo').value.trim(),driverName:document.getElementById('c_driver').value.trim(),driverPhone:document.getElementById('c_driverPhone').value.trim(),items,carRate:N(document.getElementById('c_carRate').value),deliverTo:document.getElementById('c_deliverTo').value});
-  save();alert('✅');car()}
+  db.cars.push({id:uid(),date:document.getElementById('c_date').value,person:person,carNo:document.getElementById('c_carNo').value.trim(),driverName:document.getElementById('c_driver').value.trim(),driverPhone:document.getElementById('c_driverPhone').value.trim(),items:items,carRate:N(document.getElementById('c_carRate').value),deliverTo:document.getElementById('c_deliverTo').value});
+  save();alert('✅');render('car');
+}
 
 function customers(){
-  const list=db.customers.map(c=>({name:c.name,...cBal(c.name)})).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));
+  var list=[];for(var i=0;i<db.customers.length;i++){var c=db.customers[i];var b=cBal(c.name);list.push({name:c.name,st:b.st,pt:b.pt,net:b.net});}
+  list.sort(function(a,b){return Math.abs(b.net)-Math.abs(a.net)});
   window._cc=list;
-  shell('👥 ဖောက်သည်',`<div class="cd"><div class="row"><input id="cq" placeholder="🔍" oninput="filtC()"></div><div class="row"><input id="cnew" placeholder="အသစ်"><button onclick="quickC()">➕</button></div></div><div class="cd" id="cList">${rowC(list)}</div>`)}
-function rowC(l){return l.length?l.map(c=>`<div class="rc" style="cursor:pointer" onclick="go('customer/${encodeURIComponent(c.name)}')"><div style="display:flex;justify-content:space-between"><div><b>${esc(c.name)}</b><div class="mt">အရောင်း ${money(c.st)} · အဝယ် ${money(c.pt)}</div></div><div style="font-weight:800" class="${c.net>0?'ng':(c.net<0?'ps':'')}">${c.net>0?money(c.net)+' ပေး':(c.net<0?money(-c.net)+' ရ':'ရှင်း')}</div></div></div>`).join(''):'<div class="ep">မရှိ</div>'}
-function filtC(){const q=(document.getElementById('cq').value||'').toLowerCase();document.getElementById('cList').innerHTML=rowC((window._cc||[]).filter(c=>c.name.toLowerCase().includes(q)))}
-function quickC(){const n=document.getElementById('cnew').value.trim();if(!n)return;addC(n);customers()}
+  shell('👥 ဖောက်သည်','<div class="cd"><div class="row"><input id="cq" placeholder="🔍" oninput="filtC()"></div><div class="row"><input id="cnew" placeholder="အသစ်"><button onclick="quickC()">➕</button></div></div><div class="cd" id="cList">'+rowC(list)+'</div>');
+}
+function rowC(list){
+  if(!list.length)return '<div class="ep">မရှိ</div>';
+  var h='';
+  for(var i=0;i<list.length;i++){var c=list[i];
+    h+='<div class="rc" style="cursor:pointer" onclick="go(\'customer/'+encodeURIComponent(c.name)+'\')"><div style="display:flex;justify-content:space-between"><div><b>'+esc(c.name)+'</b><div class="mt">အရောင်း '+money(c.st)+' · အဝယ် '+money(c.pt)+'</div></div><div style="font-weight:800" class="'+(c.net>0?'ng':(c.net<0?'ps':''))+'">'+(c.net>0?money(c.net)+' ပေး':(c.net<0?money(-c.net)+' ရ':'ရှင်း'))+'</div></div></div>';
+  }
+  return h;
+}
+function filtC(){var q=(document.getElementById('cq').value||'').toLowerCase();var f=[];for(var i=0;i<window._cc.length;i++){if(window._cc[i].name.toLowerCase().indexOf(q)>=0)f.push(window._cc[i]);}document.getElementById('cList').innerHTML=rowC(f);}
+function quickC(){var n=document.getElementById('cnew').value.trim();if(!n)return;addC(n);customers();}
 function custDetail(name){
-  const bal=cBal(name);
-  const sales=db.sales.filter(s=>s.person===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  const purchases=db.purchases.filter(p=>p.person===name).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  const pend=pendingFor(name);
-  app.innerHTML=`<button class="sf" onclick="go('customers')">← ဖောက်သည်</button>
-  <h2 style="margin:6px 0">👤 ${esc(name)}</h2>
-  <div class="row"><div class="cd">အရောင်း<br><b class="st">${money(bal.st)}</b></div><div class="cd">အဝယ်<br><b class="st">${money(bal.pt)}</b></div><div class="cd">${bal.net>0?'ပေးရန်':'ရရန်'}<br><b class="st ${bal.net>0?'ng':'ps'}">${money(Math.abs(bal.net))}</b></div></div>
-  ${pend.length?`<div class="cd"><div class="mt"><b>🚛 ကားတင်ရန် ကျန်</b></div>${pend.map(i=>`<div class="mt">• ${esc(i.item)} — <b>${qty(i.pending)}ပိဿာ</b></div>`).join('')}</div>`:''}
-  <div class="cd"><h3>📤 အရောင်း (${sales.length})</h3>${sales.length?sales.map(s=>`<div class="rc"><div>${esc(s.date)} — <b>${money(N(s.total))}</b></div>${(s.items||[]).map(i=>`<div class="mt" style="margin-left:10px">• ${esc(i.item)} · ${qty(i.w)}×${money(i.price)}</div>`).join('')}</div>`).join(''):'<div class="ep">မရှိ</div>'}</div>
-  <div class="cd"><h3>📥 အဝယ် (${purchases.length})</h3>${purchases.length?purchases.map(p=>`<div class="rc"><div>${esc(p.date)} — <b>${money(N(p.total))}</b></div>${(p.items||[]).map(i=>`<div class="mt" style="margin-left:10px">• ${esc(i.item)} · ${qty(i.w)}×${money(i.price)}</div>`).join('')}${p.driverName||N(p.carFee)?`<div class="mt">🚛 ${esc(p.driverName||'')} · ${money(p.carFee)}</div>`:''}</div>`).join(''):'<div class="ep">မရှိ</div>'}</div>`}
+  var bal=cBal(name);
+  var pend=pendingFor(name);
+  var salesH='',purchH='';
+  for(var i=0;i<db.sales.length;i++){var s=db.sales[i];if(s.person!==name)continue;var its='';if(s.items)for(var j=0;j<s.items.length;j++){var it=s.items[j];its+='<div class="mt" style="margin-left:10px">• '+esc(it.item)+' · '+qty(it.w)+'×'+money(it.price)+'</div>';}salesH+='<div class="rc"><div>'+esc(s.date)+' — <b>'+money(N(s.total))+'</b></div>'+its+'</div>';}
+  for(var i=0;i<db.purchases.length;i++){var p=db.purchases[i];if(p.person!==name)continue;var its='';if(p.items)for(var j=0;j<p.items.length;j++){var it=p.items[j];its+='<div class="mt" style="margin-left:10px">• '+esc(it.item)+' · '+qty(it.w)+'×'+money(it.price)+'</div>';}var car=p.driverName||N(p.carFee)?'<div class="mt">🚛 '+esc(p.driverName||'')+' · '+money(p.carFee)+'</div>':'';purchH+='<div class="rc"><div>'+esc(p.date)+' — <b>'+money(N(p.total))+'</b></div>'+its+car+'</div>';}
+  var pendH='';
+  if(pend.length){pendH='<div class="cd"><div class="mt"><b>🚛 ကားတင်ရန် ကျန်</b></div>';for(var i=0;i<pend.length;i++)pendH+='<div class="mt">• '+esc(pend[i].item)+' — <b>'+qty(pend[i].pending)+'ပိဿာ</b></div>';pendH+='</div>';}
+  app.innerHTML='<button class="sf" onclick="go(\'customers\')">← ဖောက်သည်</button>'+
+    '<h2 style="margin:6px 0">👤 '+esc(name)+'</h2>'+
+    '<div class="row"><div class="cd">အရောင်း<br><b class="st">'+money(bal.st)+'</b></div><div class="cd">အဝယ်<br><b class="st">'+money(bal.pt)+'</b></div><div class="cd">'+(bal.net>0?'ပေးရန်':'ရရန်')+'<br><b class="st '+(bal.net>0?'ng':'ps')+'">'+money(Math.abs(bal.net))+'</b></div></div>'+
+    pendH+
+    '<div class="cd"><h3>📤 အရောင်း ('+(salesH?db.sales.filter(function(x){return x.person===name}).length:0)+')</h3>'+(salesH||'<div class="ep">မရှိ</div>')+'</div>'+
+    '<div class="cd"><h3>📥 အဝယ် ('+(purchH?db.purchases.filter(function(x){return x.person===name}).length:0)+')</h3>'+(purchH||'<div class="ep">မရှိ</div>')+'</div>';
+}
 
-function stock(){shell('📦 Stock',`<div class="cd"><table class="tbl"><tr><th>ပစ္စည်း</th><th>လက်ကျန် ပိဿာ</th></tr>${db.items.map(k=>`<tr><td>${esc(k)}</td><td><b>${qty(itemStock(k))}</b></td></tr>`).join('')}</table></div>`)}
+function stock(){
+  var h='';for(var i=0;i<db.items.length;i++){var k=db.items[i];h+='<tr><td>'+esc(k)+'</td><td><b>'+qty(itemStock(k))+'</b></td></tr>';}
+  shell('📦 Stock','<div class="cd"><table class="tbl"><tr><th>ပစ္စည်း</th><th>လက်ကျန် ပိဿာ</th></tr>'+h+'</table></div>');
+}
 
 function settings(){
-  shell('⚙️ ဆက်တင်',`<div class="cd"><h3>👤 Customer</h3><div class="row"><input id="nc" placeholder="အသစ်"><button onclick="addCFromSet()">➕</button></div><div style="margin-top:8px">${db.customers.map((c,i)=>`<span style="display:inline-block;padding
+  var custH='',itemH='';
+  for(var i=0;i<db.customers.length;i++)custH+='<span style="display:inline-block;padding:3px 7px;border-radius:15px;background:#e8efee;font-size:11px;margin:3px">'+esc(db.customers[i].name)+' <button class="dg sm" onclick="delC('+i+')">×</button></span>';
+  for(var i=0;i<db.items.length;i++)itemH+='<span style="display:inline-block;padding:3px 7px;border-radius:15px;background:#e8efee;font-size:11px;margin:3px">'+esc(db.items[i])+' <button class="dg sm" onclick="delI('+i+')">×</button></span>';
+  shell('⚙️ ဆက်တင်','<div class="cd"><h3>👤 Customer</h3><div class="row"><input id="nc" placeholder="အသစ်"><button onclick="addCFromSet()">➕</button></div><div style="margin-top:8px">'+custH+'</div></div>'+
+    '<div class="cd"><h3>📦 ပစ္စည်း</h3><div class="row"><input id="ni" placeholder="အသစ်"><button onclick="addI()">➕</button></div><div style="margin-top:8px">'+itemH+'</div></div>'+
+    '<div class="cd"><h3>💾 Backup</h3><button onclick="expData()">📥 ဒေါင်းလုဒ်</button><br><br><label>Restore:</label><input type="file" accept=".json" onchange="impData(this)"></div>');
+}
+function addCFromSet(){var n=document.getElementById('nc').value.trim();if(!n)return;addC(n);settings();}
+function delC(i){if(!confirm('ဖျက်မှာ?'))return;db.customers.splice(i,1);save();settings();}
+function addI(){var n=document.getElementById('ni').value.trim();if(!n)return;for(var i=0;i<db.items.length;i++)if(db.items[i]===n)return alert('ရှိပြီး');db.items.push(n);save();settings();}
+function delI(i){if(!confirm('ဖျက်မှာ?'))return;db.items.splice(i,1);save();settings();}
+function expData(){var u=URL.createObjectURL(new Blob([JSON.stringify(db)],{type:'application/json'}));var a=document.createElement('a');a.href=u;a.download='ptt_'+today()+'.json';document.body.appendChild(a);a.click();a.remove();}
+function impData(inp){var f=inp.files[0];if(!f)return;var r=new FileReader();r.onload=function(e){try{var i=JSON.parse(e.target.result);if(confirm('အစားထိုးမှာ?')){db=i;save();location.reload();}}catch(err){alert('❌')}};r.readAsText(f);}
+
+render(curP());
+</script></body></html>
