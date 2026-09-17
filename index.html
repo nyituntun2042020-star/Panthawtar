@@ -63,9 +63,9 @@ button{border:0;border-radius:7px;padding:8px 11px;background:var(--pr);color:#f
 /* ===== IndexedDB ===== */
 const DB_NAME='ptt_db', DB_VER=1, STORE='kv', DB_KEY='db';
 let _idb=null;
-function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE);};r.onsuccess=e=>{_idb=e.target.result;res(_idb);};r.onerror=e=>rej(e);});}
-function idbGet(k){return new Promise((res,rej)=>{if(!_idb)return res(null);const t=_idb.transaction(STORE,'readonly').objectStore(STORE).get(k);t.onsuccess=()=>res(t.result||null);t.onerror=rej;});}
-function idbPut(k,v){return new Promise((res,rej)=>{if(!_idb)return rej('no');const t=_idb.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);t.onsuccess=res;t.onerror=rej;});}
+function idbOpen(){return new Promise((res,rej)=>{try{const r=indexedDB.open(DB_NAME,DB_VER);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE);};r.onsuccess=e=>{_idb=e.target.result;res(_idb);};r.onerror=e=>rej(e);}catch(e){rej(e);}});}
+function idbGet(k){return new Promise((res,rej)=>{if(!_idb)return res(null);try{const t=_idb.transaction(STORE,'readonly').objectStore(STORE).get(k);t.onsuccess=()=>res(t.result||null);t.onerror=rej;}catch(e){res(null);}});}
+function idbPut(k,v){return new Promise((res,rej)=>{if(!_idb)return res('no');try{const t=_idb.transaction(STORE,'readwrite').objectStore(STORE).put(v,k);t.onsuccess=res;t.onerror=rej;}catch(e){res('err');}});}
 
 /* ===== Constants ===== */
 const OLD_KEYS=['ptt_v11','ptt_v10','ptt_v9','ptt_v7','panthawtar_wholesale_v6'];
@@ -120,7 +120,7 @@ function migrate(){
   ['purchases','sales','deposits','precuts'].forEach(k=>db[k].forEach(x=>{if(x.person&&!s2.has(x.person)){s2.add(x.person);db.customers.push({name:x.person,phone:'',address:''});}}));
 }
 let _t=null;
-function save(){if(_t)clearTimeout(_t);_t=setTimeout(()=>{idbPut(DB_KEY,db).catch(e=>alert('❌ သိမ်းမရ'));},400);return true;}
+function save(){if(_t)clearTimeout(_t);_t=setTimeout(()=>{idbPut(DB_KEY,db).catch(()=>{});},400);return true;}
 
 /* ===== Helpers ===== */
 function findC(n){n=String(n||'').trim();return db.customers.find(c=>c.name===n);}
@@ -233,4 +233,4 @@ function closeE(){_ec=null;_ep='';_ecp='';_eip='';closeM();}
 function selEP(inp,w){readEP(inp,w);}
 function readEP(inp,which){
   const f=inp.files[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{con
+  const r=new FileRead
